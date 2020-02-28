@@ -8,7 +8,6 @@ import (
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	"strconv"
 	"time"
