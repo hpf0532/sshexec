@@ -2,15 +2,16 @@ package sshexec
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"strconv"
 	"time"
-	"golang.org/x/crypto/ssh"
-	"github.com/pkg/sftp"
-	"io"
-	"errors"
-	"fmt"
 )
 
 // ssh session
@@ -40,15 +41,15 @@ type ExecResult struct {
 
 // execute the command and return a result structure
 
-func (exec *HostSession) Exec(id int, command string, config ssh.ClientConfig) (*ExecResult) {
+func (exec *HostSession) Exec(id int, command string, config ssh.ClientConfig) *ExecResult {
 
 	result := &ExecResult{
-		Id:        id,
-		Host:      exec.Hostname,
-		Command:   command,
+		Id:      id,
+		Host:    exec.Hostname,
+		Command: command,
 	}
 
-	client, err := ssh.Dial("tcp", exec.Hostname + ":" + strconv.Itoa(exec.Port), &config)
+	client, err := ssh.Dial("tcp", exec.Hostname+":"+strconv.Itoa(exec.Port), &config)
 
 	if err != nil {
 		result.Error = err
@@ -82,20 +83,19 @@ func (exec *HostSession) Exec(id int, command string, config ssh.ClientConfig) (
 	return result
 }
 
-
 // execute the command and return a result structure
 
-func (exec *HostSession) Transfer(id int, localFilePath  string, remoteFilePath string, config ssh.ClientConfig) (*ExecResult) {
+func (exec *HostSession) Transfer(id int, localFilePath string, remoteFilePath string, config ssh.ClientConfig) *ExecResult {
 
 	result := &ExecResult{
-		Id:        id,
-		Host:      exec.Hostname,
-		LocalFilePath:   localFilePath,
-		RemoteFilePath:   remoteFilePath,
+		Id:             id,
+		Host:           exec.Hostname,
+		LocalFilePath:  localFilePath,
+		RemoteFilePath: remoteFilePath,
 	}
 	start := time.Now()
 	result.StartTime = start
-	client, err := ssh.Dial("tcp", exec.Hostname + ":" + strconv.Itoa(exec.Port), &config)
+	client, err := ssh.Dial("tcp", exec.Hostname+":"+strconv.Itoa(exec.Port), &config)
 
 	if err != nil {
 		result.Error = err
@@ -174,9 +174,10 @@ func (exec *HostSession) GenerateConfig() ssh.ClientConfig {
 	config := ssh.ClientConfig{
 		User: exec.Username,
 		Auth: auths,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	config.Ciphers = []string{"aes128-cbc", "3des-cbc"}
+	// config.Ciphers = []string{"aes128-cbc", "3des-cbc"}
 
 	return config
 }
